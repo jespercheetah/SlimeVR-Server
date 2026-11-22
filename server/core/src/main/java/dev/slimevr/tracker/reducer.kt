@@ -93,6 +93,42 @@ fun reduce(
 		)
 	}
 
+	is TrackerActions.SetFlex -> {
+		val rawFlex = action.rawFlex
+		val maxObserved = when(state.flexCalibration.maxObserved) {
+			null -> rawFlex
+			else -> maxOf(state.flexCalibration.maxObserved, rawFlex)
+		}
+		val minObserved = when(state.flexCalibration.minObserved) {
+			null -> rawFlex
+			else -> minOf(state.flexCalibration.minObserved, rawFlex)
+		}
+		val rawStraight = when(state.flexCalibration.lowMeansStraight) {
+			true -> minObserved
+			false -> maxObserved
+			else -> null
+		}
+		val rawBent = when(state.flexCalibration.lowMeansStraight) {
+			true -> maxObserved
+			false -> minObserved
+			else -> null
+		}
+		val normalizedFlex: FlexValue? = if(rawStraight != null && rawBent != null && rawStraight != rawBent) {
+			((rawFlex - rawStraight) / (rawBent - rawStraight)).coerceIn(0.0f, 1.0f)
+		}
+		else {
+			null
+		}
+		state.copy(
+			flexCalibration = state.flexCalibration.copy(
+				rawFlex = rawFlex,
+				maxObserved = maxObserved,
+				minObserved = minObserved,
+				normalizedFlex = normalizedFlex
+			)
+		)
+	}
+
 	is TrackerActions.SetMountingOrientation -> {
 		state.copy(
 			mountingOrientation = action.mountingOrientation,
@@ -139,6 +175,13 @@ fun reduce(
 				headingCorrection = if (correctHeading) headingCorrection else state.sessionCalibration.headingCorrection,
 				attitudeAlignment = attitudeAlignment,
 				headingAlignment = headingAlignment,
+			),
+			flexCalibration = FlexCalibration(
+				rawFlex = state.flexCalibration.rawFlex,
+				rawFlexAtFullCalibration = state.flexCalibration.rawFlex,
+				maxObserved = state.flexCalibration.rawFlex,
+				minObserved = state.flexCalibration.rawFlex,
+				normalizedFlex = if (state.flexCalibration.rawFlex != null) 0.0f else null
 			),
 			lastReference = referenceRotation,
 			// Full reset snaps: cancel any in-progress yaw smoothing.
@@ -214,8 +257,20 @@ fun reduce(
 			state.sessionCalibration.headingCorrection
 		}
 
+		val lowFlexMeansStraight: Boolean? = if (state.flexCalibration.rawFlex == null || state.flexCalibration.rawFlexAtFullCalibration == null || state.flexCalibration.rawFlex == state.flexCalibration.rawFlexAtFullCalibration) {
+			null
+		} else {
+			state.flexCalibration.rawFlex > state.flexCalibration.rawFlexAtFullCalibration
+		}
+
+		val normalizedFlex: FlexValue? = if (lowFlexMeansStraight != null) 1.0f else null
+
 		state.copy(
 			sessionCalibration = state.sessionCalibration.copy(headingCorrection = headingCorrection, headingAlignment = headingAlignment),
+			flexCalibration = state.flexCalibration.copy(
+				lowMeansStraight = lowFlexMeansStraight,
+				normalizedFlex = normalizedFlex,
+			),
 			lastMountingMethod = if (alignHeading) MountingMethod.POSE else state.lastMountingMethod,
 			needsMountingReset = state.needsMountingReset && !alignHeading,
 			lastReference = referenceRotation,

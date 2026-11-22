@@ -107,6 +107,7 @@ class UDPConnection(
 				DeviceStatsBehaviour(),
 				SensorInfoBehaviour(),
 				SensorRotationBehaviour(),
+				SensorFlexBehaviour(),
 				BundledPacketBehaviour(),
 				FlagsBehaviour(),
 				TemperatureBehaviour(),

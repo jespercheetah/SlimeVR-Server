@@ -421,6 +421,15 @@ class SensorRotationBehaviour : UDPConnectionBehaviour {
 	}
 }
 
+class SensorFlexBehaviour : UDPConnectionBehaviour {
+	override fun observe(receiver: UDPConnection) {
+		receiver.packetEvents.onPacket<FlexData> { event ->
+			val tracker = receiver.getTracker(event.data.sensorId) ?: return@onPacket 
+			tracker.context.dispatch(TrackerActions.SetFlex(rawFlex = event.data.flexData))
+		}.launchIn(receiver.context.scope)
+	}
+}
+
 class BundledPacketBehaviour : UDPConnectionBehaviour {
 	override fun observe(receiver: UDPConnection) {
 		receiver.packetEvents.onPacket<PacketBundle> { event ->

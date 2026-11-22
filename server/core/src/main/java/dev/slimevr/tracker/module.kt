@@ -77,6 +77,7 @@ data class TrackerState(
 	val rawMagnetometer: Vector3,
 	val rawPosition: Vector3?,
 	val position: Vector3?,
+	val flexCalibration: FlexCalibration,
 	val imuTemp: Float?,
 	val accumulatedTicks: UShort,
 	val tps: UShort,
@@ -109,6 +110,7 @@ sealed interface TrackerActions {
 	data class SetStatus(val status: TrackerStatus) : TrackerActions
 	data class SetDriverName(val driverName: String?) : TrackerActions
 	data class SetRotation(val rotation: Quaternion? = null, val acceleration: Vector3? = null, val magnetometer: Vector3? = null, val position: Vector3? = null, val increaseTps: Boolean = true) : TrackerActions
+	data class SetFlex(val rawFlex: RawFlex) : TrackerActions
 	data class SetMountingOrientation(val mountingOrientation: HeadingAlignment) : TrackerActions
 	data class FullReset(val referenceRotation: Quaternion?, val resetHmdAttitude: Boolean = false) : TrackerActions
 	data class YawReset(val referenceRotation: Quaternion?, val smoothTime: Duration = Duration.ZERO) : TrackerActions
@@ -220,6 +222,7 @@ class Tracker(
 			rawMagnetometer = Vector3.ZERO,
 			rawPosition = null,
 			position = null,
+			flexCalibration = FlexCalibration(),
 			imuTemp = null,
 			accumulatedTicks = 0u,
 			tps = 0u,
