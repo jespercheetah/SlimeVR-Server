@@ -40,7 +40,7 @@ class TrackerToSkeletonBehaviour : TrackerBehaviour {
 					.filter { it.bodyPart != null && it.status.isActive() }
 
 				activeState
-					.distinctUntilChanged { old, new -> old.rotation == new.rotation && old.acceleration == new.acceleration && old.position == new.position && old.pendingSkeletonResets == new.pendingSkeletonResets }
+					.distinctUntilChanged { old, new -> old.rotation == new.rotation && old.acceleration == new.acceleration && old.position == new.position && old.pendingSkeletonResets == new.pendingSkeletonResets && old.flexCalibration.normalizedFlex == new.flexCalibration.normalizedFlex }
 					.onEach { trackerState ->
 						trackerState.bodyPart?.let { bodyPart ->
 							val pendingResets = trackerState.pendingSkeletonResets
